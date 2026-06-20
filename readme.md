@@ -1,0 +1,1 @@
+Github pages を用いて、issuesをカンバン風にして見やすくするためのwebページ
