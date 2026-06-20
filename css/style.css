@@ -1,0 +1,229 @@
+/* === Reset & Base === */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: #0d1117;
+  color: #c9d1d9;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: #58a6ff;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* === Header === */
+header {
+  background-color: #161b22;
+  border-bottom: 1px solid #30363d;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #f0f6fc;
+}
+
+#repo-display {
+  font-size: 0.95rem;
+  color: #8b949e;
+}
+
+/* === Main Layout === */
+main {
+  flex: 1;
+  padding: 24px;
+  overflow-x: auto;
+}
+
+/* === Kanban Board === */
+#kanban-board {
+  display: flex;
+  gap: 16px;
+  min-height: calc(100vh - 160px);
+  align-items: flex-start;
+}
+
+.kanban-column {
+  flex: 1;
+  min-width: 280px;
+  max-width: 400px;
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 160px);
+}
+
+.column-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #30363d;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.column-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f0f6fc;
+}
+
+.issue-count {
+  background-color: #30363d;
+  color: #8b949e;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.column-body {
+  padding: 8px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 60px;
+}
+
+.column-body.drag-over {
+  background-color: #1c2333;
+  border-radius: 4px;
+}
+
+/* === Issue Card === */
+.issue-card {
+  background-color: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 12px;
+  cursor: grab;
+  transition: box-shadow 0.15s, transform 0.15s;
+  user-select: none;
+}
+
+.issue-card:hover {
+  border-color: #484f58;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.issue-card.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+}
+
+.issue-card .issue-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #f0f6fc;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+.issue-card .issue-title a {
+  color: #f0f6fc;
+}
+.issue-card .issue-title a:hover {
+  color: #58a6ff;
+  text-decoration: none;
+}
+
+.issue-card .issue-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #8b949e;
+}
+
+.issue-card .issue-number {
+  font-weight: 600;
+  color: #484f58;
+}
+
+.issue-card .issue-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.issue-card .issue-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 2px;
+  line-height: 1.4;
+}
+
+/* === Footer === */
+footer {
+  background-color: #161b22;
+  border-top: 1px solid #30363d;
+  padding: 12px 24px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #484f58;
+}
+
+/* === Loading & Error States === */
+.loading, .error, .empty-state {
+  text-align: center;
+  padding: 40px 16px;
+  color: #8b949e;
+}
+
+.error {
+  color: #f85149;
+}
+
+.empty-state {
+  font-size: 0.85rem;
+  color: #484f58;
+}
+
+/* === Scrollbar === */
+.column-body::-webkit-scrollbar {
+  width: 6px;
+}
+.column-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.column-body::-webkit-scrollbar-thumb {
+  background-color: #30363d;
+  border-radius: 3px;
+}
+
+/* === Responsive === */
+@media (max-width: 900px) {
+  #kanban-board {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .kanban-column {
+    max-width: none;
+    max-height: none;
+  }
+  .column-body {
+    max-height: 300px;
+  }
+}
