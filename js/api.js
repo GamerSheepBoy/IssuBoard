@@ -58,3 +58,8 @@ const GitHubAPI = {
     return allIssues.filter(issue => !issue.pull_request);
   },
 };
+
+// Vitest環境とブラウザ両対応のためexport
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { GitHubAPI };
+}

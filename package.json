@@ -1,0 +1,25 @@
+{
+  "name": "issuboard",
+  "version": "1.0.0",
+  "description": "GitHub Issues をカンバン風に表示するWebページ。GitHub Pages でホスティングします。",
+  "main": "config.js",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GamerSheepBoy/IssuBoard.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GamerSheepBoy/IssuBoard/issues"
+  },
+  "homepage": "https://github.com/GamerSheepBoy/IssuBoard#readme",
+  "devDependencies": {
+    "jsdom": "^29.1.1",
+    "vitest": "^4.1.9"
+  }
+}

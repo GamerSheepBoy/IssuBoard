@@ -219,3 +219,8 @@ const KanbanBoard = {
     }
   },
 };
+
+// Vitest環境とブラウザ両対応のためexport
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { KanbanBoard };
+}
