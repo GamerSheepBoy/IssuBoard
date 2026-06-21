@@ -1,7 +1,7 @@
 /**
  * IssuBoard - Main application entry point
  */
-(async function main() {
+async function main() {
   const repoDisplay = document.getElementById('repo-display');
   if (repoDisplay) {
     repoDisplay.textContent = `${CONFIG.owner}/${CONFIG.repo}`;
@@ -30,4 +30,14 @@
     console.error('[IssuBoard] Error:', error);
     KanbanBoard.showError(error.message);
   }
-})();
+}
+
+// Vitest環境とブラウザ両対応のためexport
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { main };
+}
+
+// ブラウザでのみ自動実行（Vitestでは実行しない）
+if (typeof globalThis.__VITEST__ === 'undefined') {
+  main().catch(console.error);
+}

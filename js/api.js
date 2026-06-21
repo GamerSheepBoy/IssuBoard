@@ -58,3 +58,10 @@ const GitHubAPI = {
     return allIssues.filter(issue => !issue.pull_request);
   },
 };
+
+// ESM / CJS / ブラウザ 全てでグローバルアクセス可能にする
+globalThis.GitHubAPI = GitHubAPI;
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { GitHubAPI };
+}

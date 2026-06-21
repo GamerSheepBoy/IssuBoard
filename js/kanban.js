@@ -219,3 +219,10 @@ const KanbanBoard = {
     }
   },
 };
+
+// ESM / CJS / ブラウザ 全てでグローバルアクセス可能にする
+globalThis.KanbanBoard = KanbanBoard;
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { KanbanBoard };
+}
