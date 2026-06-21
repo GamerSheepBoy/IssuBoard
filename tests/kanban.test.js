@@ -97,7 +97,7 @@ describe('KanbanBoard', () => {
 
       const result = KanbanBoard.classifyIssues(issues);
 
-      expect(result.incoming[0]._blockedBy).toEqual([2]);
+      expect(result.incoming[0]._blockedBy).toEqual(['2']);
       expect(result.incoming[1]._blockedBy).toEqual([]);
     });
 

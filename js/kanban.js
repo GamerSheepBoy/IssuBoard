@@ -16,17 +16,13 @@ const KanbanBoard = {
 
     const doingLabel = CONFIG.doingLabel;
 
-    // 関係性マップを作成
+    // 関係性マップを作成（キーを文字列に統一）
     const issueMap = new Map();
     for (const issue of issues) {
-      issueMap.set(issue.number, issue);
+      issueMap.set(String(issue.number), issue);
     }
 
     for (const issue of issues) {
-      // 関係性情報を付与
-      issue._childCount = 0;
-      issue._blockedBy = [];
-
       // Closed: completed のみ Done に表示、それ以外は非表示
       if (issue.state === 'closed') {
         if (issue.state_reason === 'completed') {
@@ -47,15 +43,15 @@ const KanbanBoard = {
       }
     }
 
-    // 関係性を計算（2パスで親子関係を解決）
+    // blocking関係を抽出（closedのblockerは無視）
     for (const issue of issues) {
-      // blocking関係を抽出（closedのblockerは無視）
-      const blockedBy = GitHubAPI.extractBlockingRelationships(issue.body).filter(blockerNum => {
-        const blocker = issueMap.get(blockerNum);
-        return blocker && blocker.state === 'open';
-      });
+      const blockedBy = GitHubAPI.extractBlockingRelationships(issue.body)
+        .map(num => String(num))
+        .filter(blockerNum => {
+          const blocker = issueMap.get(blockerNum);
+          return blocker && blocker.state === 'open';
+        });
       issue._blockedBy = blockedBy;
-      // このIssueがblockしている対象（逆引き）
       issue._blockingTargets = [];
     }
 
@@ -65,7 +61,7 @@ const KanbanBoard = {
         const blocker = issueMap.get(blockerNum);
         if (blocker) {
           blocker._blockingTargets = blocker._blockingTargets || [];
-          blocker._blockingTargets.push(issue.number);
+          blocker._blockingTargets.push(String(issue.number));
         }
       }
     }
@@ -216,10 +212,10 @@ const KanbanBoard = {
   _attachRelationHoverEvents(card, issue) {
     const relatedNumbers = new Set();
     if (issue._blockedBy) {
-      issue._blockedBy.forEach(n => relatedNumbers.add(n));
+      issue._blockedBy.forEach(n => relatedNumbers.add(String(n)));
     }
     if (issue._blockingTargets) {
-      issue._blockingTargets.forEach(n => relatedNumbers.add(n));
+      issue._blockingTargets.forEach(n => relatedNumbers.add(String(n)));
     }
 
     if (relatedNumbers.size === 0) return;
@@ -228,9 +224,9 @@ const KanbanBoard = {
       for (const num of relatedNumbers) {
         const relatedCard = document.querySelector(`.issue-card[data-issue-number="${num}"]`);
         if (relatedCard) {
-          if (issue._blockedBy && issue._blockedBy.includes(num)) {
+          if (issue._blockedBy && issue._blockedBy.map(String).includes(num)) {
             relatedCard.classList.add('relation-highlight-blocker');
-          } else if (issue._blockingTargets && issue._blockingTargets.includes(num)) {
+          } else if (issue._blockingTargets && issue._blockingTargets.map(String).includes(num)) {
             relatedCard.classList.add('relation-highlight-blocked');
           }
         }
