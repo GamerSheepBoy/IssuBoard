@@ -280,6 +280,18 @@ const KanbanBoard = {
    */
   _attachRelationHoverEvents(card, issue) {
     const relatedNumbers = new Set();
+    let selfHighlightClass = null;
+
+    // 自分自身のハイライトクラスを決定
+    if (issue._blockedBy && issue._blockedBy.length > 0) {
+      selfHighlightClass = 'relation-highlight-blocked';
+    } else if (issue._blockingTargets && issue._blockingTargets.length > 0) {
+      selfHighlightClass = 'relation-highlight-blocker';
+    } else if (issue._parent) {
+      selfHighlightClass = 'relation-highlight-child';
+    }
+
+    // 関連Issueの番号を収集
     if (issue._blockedBy) {
       issue._blockedBy.forEach(n => relatedNumbers.add(String(n)));
     }
@@ -293,9 +305,15 @@ const KanbanBoard = {
       issue._children.forEach(n => relatedNumbers.add(String(n)));
     }
 
-    if (relatedNumbers.size === 0) return;
+    if (relatedNumbers.size === 0 && !selfHighlightClass) return;
 
     card.addEventListener('mouseenter', () => {
+      // 自分自身をハイライト
+      if (selfHighlightClass) {
+        card.classList.add(selfHighlightClass);
+      }
+
+      // 関連カードをハイライト
       for (const num of relatedNumbers) {
         const relatedCard = document.querySelector(`.issue-card[data-issue-number="${num}"]`);
         if (relatedCard) {
@@ -313,6 +331,11 @@ const KanbanBoard = {
     });
 
     card.addEventListener('mouseleave', () => {
+      // 自分自身のハイライトを解除
+      if (selfHighlightClass) {
+        card.classList.remove(selfHighlightClass);
+      }
+      // 関連カードのハイライトを解除
       document.querySelectorAll('.relation-highlight-blocker, .relation-highlight-blocked, .relation-highlight-parent, .relation-highlight-child')
         .forEach(el => {
           el.classList.remove('relation-highlight-blocker', 'relation-highlight-blocked', 'relation-highlight-parent', 'relation-highlight-child');
