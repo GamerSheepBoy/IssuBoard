@@ -49,22 +49,14 @@ const KanbanBoard = {
 
     // 関係性を計算（2パスで親子関係を解決）
     for (const issue of issues) {
-      // blocking関係を抽出
-      const blockedBy = GitHubAPI.extractBlockingRelationships(issue.body);
+      // blocking関係を抽出（closedのblockerは無視）
+      const blockedBy = GitHubAPI.extractBlockingRelationships(issue.body).filter(blockerNum => {
+        const blocker = issueMap.get(blockerNum);
+        return blocker && blocker.state === 'open';
+      });
       issue._blockedBy = blockedBy;
       // このIssueがblockしている対象（逆引き）
       issue._blockingTargets = [];
-
-      // 親子関係: 同じIssue内の子Issue参照を検出
-      const childRefs = (issue.body || '').match(/#\d+/g) || [];
-      issue._childNumbers = [];
-      for (const ref of childRefs) {
-        const childNum = parseInt(ref.slice(1), 10);
-        if (issueMap.has(childNum) && childNum !== issue.number) {
-          issue._childNumbers.push(childNum);
-          issueMap.get(childNum)._childCount = (issueMap.get(childNum)._childCount || 0) + 1;
-        }
-      }
     }
 
     // blockingの逆引きを計算（Aがblocked by B → BはAをblockしている）
@@ -159,26 +151,16 @@ const KanbanBoard = {
       card.appendChild(labelsEl);
     }
 
-    // 関係性インジケータ
-    if (issue._childCount > 0 || (issue._blockedBy && issue._blockedBy.length > 0)) {
+    // blocked-byインジケータ
+    if (issue._blockedBy && issue._blockedBy.length > 0) {
       const relationEl = document.createElement('div');
       relationEl.className = 'issue-relations';
 
-      if (issue._childCount > 0) {
-        const childEl = document.createElement('span');
-        childEl.className = 'relation-badge child-count';
-        childEl.textContent = `👶 ${issue._childCount}`;
-        childEl.title = `${issue._childCount}件の子Issue`;
-        relationEl.appendChild(childEl);
-      }
-
-      if (issue._blockedBy && issue._blockedBy.length > 0) {
-        const blockedEl = document.createElement('span');
-        blockedEl.className = 'relation-badge blocked-by';
-        blockedEl.textContent = `🚫 #${issue._blockedBy.join(', #')}`;
-        blockedEl.title = 'blocked by';
-        relationEl.appendChild(blockedEl);
-      }
+      const blockedEl = document.createElement('span');
+      blockedEl.className = 'relation-badge blocked-by';
+      blockedEl.textContent = `🚫 #${issue._blockedBy.join(', #')}`;
+      blockedEl.title = 'blocked by';
+      relationEl.appendChild(blockedEl);
 
       card.appendChild(relationEl);
     }
@@ -233,9 +215,6 @@ const KanbanBoard = {
    */
   _attachRelationHoverEvents(card, issue) {
     const relatedNumbers = new Set();
-    if (issue._childNumbers) {
-      issue._childNumbers.forEach(n => relatedNumbers.add(n));
-    }
     if (issue._blockedBy) {
       issue._blockedBy.forEach(n => relatedNumbers.add(n));
     }
@@ -249,9 +228,7 @@ const KanbanBoard = {
       for (const num of relatedNumbers) {
         const relatedCard = document.querySelector(`.issue-card[data-issue-number="${num}"]`);
         if (relatedCard) {
-          if (issue._childNumbers && issue._childNumbers.includes(num)) {
-            relatedCard.classList.add('relation-highlight-child');
-          } else if (issue._blockedBy && issue._blockedBy.includes(num)) {
+          if (issue._blockedBy && issue._blockedBy.includes(num)) {
             relatedCard.classList.add('relation-highlight-blocker');
           } else if (issue._blockingTargets && issue._blockingTargets.includes(num)) {
             relatedCard.classList.add('relation-highlight-blocked');
@@ -261,9 +238,9 @@ const KanbanBoard = {
     });
 
     card.addEventListener('mouseleave', () => {
-      document.querySelectorAll('.relation-highlight-child, .relation-highlight-blocker, .relation-highlight-blocked')
+      document.querySelectorAll('.relation-highlight-blocker, .relation-highlight-blocked')
         .forEach(el => {
-          el.classList.remove('relation-highlight-child', 'relation-highlight-blocker', 'relation-highlight-blocked');
+          el.classList.remove('relation-highlight-blocker', 'relation-highlight-blocked');
         });
     });
   },

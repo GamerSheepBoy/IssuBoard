@@ -101,18 +101,6 @@ describe('KanbanBoard', () => {
       expect(result.incoming[1]._blockedBy).toEqual([]);
     });
 
-    it('子Issue数がカウントされる', () => {
-      const issues = [
-        { number: 1, title: 'Parent', state: 'open', labels: [], body: 'See #2 and #3', state_reason: null },
-        { number: 2, title: 'Child1', state: 'open', labels: [], body: '', state_reason: null },
-        { number: 3, title: 'Child2', state: 'open', labels: [], body: '', state_reason: null },
-      ];
-
-      const result = KanbanBoard.classifyIssues(issues);
-
-      expect(result.incoming[1]._childCount).toBe(1);
-      expect(result.incoming[2]._childCount).toBe(1);
-    });
   });
 
   describe('createCard', () => {
