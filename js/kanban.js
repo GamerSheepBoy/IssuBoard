@@ -86,6 +86,19 @@ const KanbanBoard = {
       }
     }
 
+    // 子Issueの逆引きを計算（AのparentがB → Bの子はA）
+    for (const issue of issues) {
+      if (issue._parent) {
+        const parent = issueMap.get(String(issue._parent));
+        if (parent) {
+          parent._children = parent._children || [];
+          if (!parent._children.includes(issue.number)) {
+            parent._children.push(issue.number);
+          }
+        }
+      }
+    }
+
     // issueMapをKanbanBoardに一時保存（createCardで使用）
     KanbanBoard._issueMap = issueMap;
 
@@ -186,6 +199,15 @@ const KanbanBoard = {
       relationEl.appendChild(parentEl);
     }
 
+    // 子Issue表示
+    if (issue._children && issue._children.length > 0) {
+      const childEl = document.createElement('span');
+      childEl.className = 'relation-badge child';
+      childEl.textContent = `👣 #${issue._children.join(', #')}`;
+      childEl.title = 'child issues';
+      relationEl.appendChild(childEl);
+    }
+
     // blocked-by表示
     if (issue._blockedBy && issue._blockedBy.length > 0) {
       const blockedEl = document.createElement('span');
@@ -267,6 +289,9 @@ const KanbanBoard = {
     if (issue._parent) {
       relatedNumbers.add(String(issue._parent));
     }
+    if (issue._children) {
+      issue._children.forEach(n => relatedNumbers.add(String(n)));
+    }
 
     if (relatedNumbers.size === 0) return;
 
@@ -280,15 +305,17 @@ const KanbanBoard = {
             relatedCard.classList.add('relation-highlight-blocked');
           } else if (issue._parent && String(issue._parent) === num) {
             relatedCard.classList.add('relation-highlight-parent');
+          } else if (issue._children && issue._children.map(String).includes(num)) {
+            relatedCard.classList.add('relation-highlight-child');
           }
         }
       }
     });
 
     card.addEventListener('mouseleave', () => {
-      document.querySelectorAll('.relation-highlight-blocker, .relation-highlight-blocked, .relation-highlight-parent')
+      document.querySelectorAll('.relation-highlight-blocker, .relation-highlight-blocked, .relation-highlight-parent, .relation-highlight-child')
         .forEach(el => {
-          el.classList.remove('relation-highlight-blocker', 'relation-highlight-blocked', 'relation-highlight-parent');
+          el.classList.remove('relation-highlight-blocker', 'relation-highlight-blocked', 'relation-highlight-parent', 'relation-highlight-child');
         });
     });
   },
