@@ -5,6 +5,9 @@
 import { JSDOM } from 'jsdom';
 import { vi } from 'vitest';
 
+// Vitest実行中フラグ（app.jsの自動実行を防ぐ）
+globalThis.__VITEST__ = true;
+
 // テスト用のCONFIG
 globalThis.CONFIG = {
   owner: 'test-owner',

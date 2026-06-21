@@ -59,7 +59,9 @@ const GitHubAPI = {
   },
 };
 
-// Vitest環境とブラウザ両対応のためexport
+// ESM / CJS / ブラウザ 全てでグローバルアクセス可能にする
+globalThis.GitHubAPI = GitHubAPI;
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { GitHubAPI };
 }
