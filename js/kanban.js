@@ -52,13 +52,28 @@ const KanbanBoard = {
       // blocking関係を抽出
       const blockedBy = GitHubAPI.extractBlockingRelationships(issue.body);
       issue._blockedBy = blockedBy;
+      // このIssueがblockしている対象（逆引き）
+      issue._blockingTargets = [];
 
       // 親子関係: 同じIssue内の子Issue参照を検出
       const childRefs = (issue.body || '').match(/#\d+/g) || [];
+      issue._childNumbers = [];
       for (const ref of childRefs) {
         const childNum = parseInt(ref.slice(1), 10);
         if (issueMap.has(childNum) && childNum !== issue.number) {
+          issue._childNumbers.push(childNum);
           issueMap.get(childNum)._childCount = (issueMap.get(childNum)._childCount || 0) + 1;
+        }
+      }
+    }
+
+    // blockingの逆引きを計算（Aがblocked by B → BはAをblockしている）
+    for (const issue of issues) {
+      for (const blockerNum of issue._blockedBy) {
+        const blocker = issueMap.get(blockerNum);
+        if (blocker) {
+          blocker._blockingTargets = blocker._blockingTargets || [];
+          blocker._blockingTargets.push(issue.number);
         }
       }
     }
@@ -188,6 +203,9 @@ const KanbanBoard = {
     // ドラッグイベント
     this._attachDragEvents(card);
 
+    // 関係性ハイライトイベント
+    this._attachRelationHoverEvents(card, issue);
+
     return card;
   },
 
@@ -207,6 +225,46 @@ const KanbanBoard = {
       document.querySelectorAll('.column-body.drag-over').forEach(el => {
         el.classList.remove('drag-over');
       });
+    });
+  },
+
+  /**
+   * 関係性ハイライトのマウスイベントをカードにアタッチ
+   */
+  _attachRelationHoverEvents(card, issue) {
+    const relatedNumbers = new Set();
+    if (issue._childNumbers) {
+      issue._childNumbers.forEach(n => relatedNumbers.add(n));
+    }
+    if (issue._blockedBy) {
+      issue._blockedBy.forEach(n => relatedNumbers.add(n));
+    }
+    if (issue._blockingTargets) {
+      issue._blockingTargets.forEach(n => relatedNumbers.add(n));
+    }
+
+    if (relatedNumbers.size === 0) return;
+
+    card.addEventListener('mouseenter', () => {
+      for (const num of relatedNumbers) {
+        const relatedCard = document.querySelector(`.issue-card[data-issue-number="${num}"]`);
+        if (relatedCard) {
+          if (issue._childNumbers && issue._childNumbers.includes(num)) {
+            relatedCard.classList.add('relation-highlight-child');
+          } else if (issue._blockedBy && issue._blockedBy.includes(num)) {
+            relatedCard.classList.add('relation-highlight-blocker');
+          } else if (issue._blockingTargets && issue._blockingTargets.includes(num)) {
+            relatedCard.classList.add('relation-highlight-blocked');
+          }
+        }
+      }
+    });
+
+    card.addEventListener('mouseleave', () => {
+      document.querySelectorAll('.relation-highlight-child, .relation-highlight-blocker, .relation-highlight-blocked')
+        .forEach(el => {
+          el.classList.remove('relation-highlight-child', 'relation-highlight-blocker', 'relation-highlight-blocked');
+        });
     });
   },
 

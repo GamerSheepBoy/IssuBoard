@@ -200,6 +200,22 @@ main {
   color: #ffffff;
 }
 
+/* === Relation Highlight on Hover === */
+.issue-card.relation-highlight-child {
+  border-color: #1f6feb;
+  box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.4);
+}
+
+.issue-card.relation-highlight-blocker {
+  border-color: #d29922;
+  box-shadow: 0 0 0 2px rgba(210, 153, 34, 0.4);
+}
+
+.issue-card.relation-highlight-blocked {
+  border-color: #f85149;
+  box-shadow: 0 0 0 2px rgba(248, 81, 73, 0.4);
+}
+
 /* === Footer === */
 footer {
   background-color: #161b22;
