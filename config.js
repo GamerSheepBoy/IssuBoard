@@ -7,23 +7,19 @@ const CONFIG = {
   owner: 'GamerSheepBoy',
   repo: 'IssuBoard',
 
-  // カラム定義（ラベル名 → カラムのマッピング）
+  // Doing と判定するラベル名
+  doingLabel: 'DOING',
+
+  // カラム定義
   columns: {
-    backlog: {
-      title: '📋 Backlog',
-      labels: ['backlog'],        // このラベルが付いたIssue
-      includeNoLabel: true,       // ラベルなしのIssueも含める
+    incoming: {
+      title: '📥 Incoming',
     },
-    'in-progress': {
-      title: '🔨 In Progress',
-      labels: ['in-progress'],
-      includeNoLabel: false,
+    doing: {
+      title: '🔨 Doing',
     },
     done: {
       title: '✅ Done',
-      labels: ['done'],
-      includeNoLabel: false,
-      includeClosed: true,        // Closed状態のIssueも含める
     },
   },
 
