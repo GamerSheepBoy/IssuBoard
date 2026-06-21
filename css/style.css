@@ -195,13 +195,23 @@ main {
   color: #ffffff;
 }
 
+.issue-card .relation-badge.parent {
+  background-color: #1f6feb;
+  color: #ffffff;
+}
+
 .issue-card .relation-badge.blocked-by {
   background-color: #8b3a3a;
   color: #ffffff;
 }
 
+.issue-card .relation-badge.blocking {
+  background-color: #d29922;
+  color: #ffffff;
+}
+
 /* === Relation Highlight on Hover === */
-.issue-card.relation-highlight-child {
+.issue-card.relation-highlight-parent {
   border-color: #1f6feb;
   box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.4);
 }

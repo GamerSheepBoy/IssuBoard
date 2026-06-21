@@ -59,19 +59,82 @@ const GitHubAPI = {
   },
 
   /**
-   * Issue本文からblocking関係を抽出する
+   * Issue本文から関係性パターンを抽出する
    * @param {string} body - Issue本文
-   * @returns {Array<number>} blocked by されているIssue番号の配列
+   * @returns {Object} { blockedBy: [number], blocking: [number], parent: number|null }
    */
-  extractBlockingRelationships(body) {
-    if (!body) return [];
-    const blockedBy = [];
-    const regex = /blocked by #(\d+)/gi;
-    let match;
-    while ((match = regex.exec(body)) !== null) {
-      blockedBy.push(parseInt(match[1], 10));
+  extractRelationshipsFromBody(body) {
+    if (!body) {
+      return { blockedBy: [], blocking: [], parent: null };
     }
-    return blockedBy;
+
+    const result = {
+      blockedBy: [],
+      blocking: [],
+      parent: null,
+    };
+
+    // blocked by #N
+    const blockedByRegex = /blocked\s+by\s+#(\d+)/gi;
+    let match;
+    while ((match = blockedByRegex.exec(body)) !== null) {
+      result.blockedBy.push(match[1]);
+    }
+
+    // blocking #N
+    const blockingRegex = /blocking\s+#(\d+)/gi;
+    while ((match = blockingRegex.exec(body)) !== null) {
+      result.blocking.push(match[1]);
+    }
+
+    // parent #N
+    const parentRegex = /parent\s+#(\d+)/i;
+    const parentMatch = parentRegex.exec(body);
+    if (parentMatch) {
+      result.parent = parentMatch[1];
+    }
+
+    return result;
+  },
+
+  /**
+   * ラベル名から関係性を抽出する
+   * @param {Array} labels - ラベル配列
+   * @returns {Object} { blockedBy: [number], blocking: [number], parent: number|null }
+   */
+  extractRelationshipsFromLabels(labels) {
+    const result = {
+      blockedBy: [],
+      blocking: [],
+      parent: null,
+    };
+
+    for (const label of labels) {
+      const name = typeof label === 'string' ? label : label.name;
+
+      // blocked-by-N
+      const blockedByMatch = name.match(/^blocked-by-(\d+)$/);
+      if (blockedByMatch) {
+        result.blockedBy.push(blockedByMatch[1]);
+        continue;
+      }
+
+      // blocking-N
+      const blockingMatch = name.match(/^blocking-(\d+)$/);
+      if (blockingMatch) {
+        result.blocking.push(blockingMatch[1]);
+        continue;
+      }
+
+      // parent-N
+      const parentMatch = name.match(/^parent-(\d+)$/);
+      if (parentMatch) {
+        result.parent = parentMatch[1];
+        continue;
+      }
+    }
+
+    return result;
   },
 };
 
