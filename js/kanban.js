@@ -16,7 +16,17 @@ const KanbanBoard = {
 
     const doingLabel = CONFIG.doingLabel;
 
+    // 関係性マップを作成
+    const issueMap = new Map();
     for (const issue of issues) {
+      issueMap.set(issue.number, issue);
+    }
+
+    for (const issue of issues) {
+      // 関係性情報を付与
+      issue._childCount = 0;
+      issue._blockedBy = [];
+
       // Closed: completed のみ Done に表示、それ以外は非表示
       if (issue.state === 'closed') {
         if (issue.state_reason === 'completed') {
@@ -34,6 +44,29 @@ const KanbanBoard = {
         classified.doing.push(issue);
       } else {
         classified.incoming.push(issue);
+      }
+    }
+
+    // 関係性を計算（2パスで親子関係を解決）
+    for (const issue of issues) {
+      // blocking関係を抽出（closedのblockerは無視）
+      const blockedBy = GitHubAPI.extractBlockingRelationships(issue.body).filter(blockerNum => {
+        const blocker = issueMap.get(blockerNum);
+        return blocker && blocker.state === 'open';
+      });
+      issue._blockedBy = blockedBy;
+      // このIssueがblockしている対象（逆引き）
+      issue._blockingTargets = [];
+    }
+
+    // blockingの逆引きを計算（Aがblocked by B → BはAをblockしている）
+    for (const issue of issues) {
+      for (const blockerNum of issue._blockedBy) {
+        const blocker = issueMap.get(blockerNum);
+        if (blocker) {
+          blocker._blockingTargets = blocker._blockingTargets || [];
+          blocker._blockingTargets.push(issue.number);
+        }
       }
     }
 
@@ -118,6 +151,20 @@ const KanbanBoard = {
       card.appendChild(labelsEl);
     }
 
+    // blocked-byインジケータ
+    if (issue._blockedBy && issue._blockedBy.length > 0) {
+      const relationEl = document.createElement('div');
+      relationEl.className = 'issue-relations';
+
+      const blockedEl = document.createElement('span');
+      blockedEl.className = 'relation-badge blocked-by';
+      blockedEl.textContent = `🚫 #${issue._blockedBy.join(', #')}`;
+      blockedEl.title = 'blocked by';
+      relationEl.appendChild(blockedEl);
+
+      card.appendChild(relationEl);
+    }
+
     // メタ情報（Issue番号 & Closedの場合は完了日）
     const metaEl = document.createElement('div');
     metaEl.className = 'issue-meta';
@@ -138,6 +185,9 @@ const KanbanBoard = {
     // ドラッグイベント
     this._attachDragEvents(card);
 
+    // 関係性ハイライトイベント
+    this._attachRelationHoverEvents(card, issue);
+
     return card;
   },
 
@@ -157,6 +207,41 @@ const KanbanBoard = {
       document.querySelectorAll('.column-body.drag-over').forEach(el => {
         el.classList.remove('drag-over');
       });
+    });
+  },
+
+  /**
+   * 関係性ハイライトのマウスイベントをカードにアタッチ
+   */
+  _attachRelationHoverEvents(card, issue) {
+    const relatedNumbers = new Set();
+    if (issue._blockedBy) {
+      issue._blockedBy.forEach(n => relatedNumbers.add(n));
+    }
+    if (issue._blockingTargets) {
+      issue._blockingTargets.forEach(n => relatedNumbers.add(n));
+    }
+
+    if (relatedNumbers.size === 0) return;
+
+    card.addEventListener('mouseenter', () => {
+      for (const num of relatedNumbers) {
+        const relatedCard = document.querySelector(`.issue-card[data-issue-number="${num}"]`);
+        if (relatedCard) {
+          if (issue._blockedBy && issue._blockedBy.includes(num)) {
+            relatedCard.classList.add('relation-highlight-blocker');
+          } else if (issue._blockingTargets && issue._blockingTargets.includes(num)) {
+            relatedCard.classList.add('relation-highlight-blocked');
+          }
+        }
+      }
+    });
+
+    card.addEventListener('mouseleave', () => {
+      document.querySelectorAll('.relation-highlight-blocker, .relation-highlight-blocked')
+        .forEach(el => {
+          el.classList.remove('relation-highlight-blocker', 'relation-highlight-blocked');
+        });
     });
   },
 

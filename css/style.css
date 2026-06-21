@@ -175,6 +175,47 @@ main {
   line-height: 1.4;
 }
 
+.issue-card .issue-relations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.issue-card .relation-badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 2px;
+  line-height: 1.4;
+}
+
+.issue-card .relation-badge.child-count {
+  background-color: #1f6feb;
+  color: #ffffff;
+}
+
+.issue-card .relation-badge.blocked-by {
+  background-color: #8b3a3a;
+  color: #ffffff;
+}
+
+/* === Relation Highlight on Hover === */
+.issue-card.relation-highlight-child {
+  border-color: #1f6feb;
+  box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.4);
+}
+
+.issue-card.relation-highlight-blocker {
+  border-color: #d29922;
+  box-shadow: 0 0 0 2px rgba(210, 153, 34, 0.4);
+}
+
+.issue-card.relation-highlight-blocked {
+  border-color: #f85149;
+  box-shadow: 0 0 0 2px rgba(248, 81, 73, 0.4);
+}
+
 /* === Footer === */
 footer {
   background-color: #161b22;

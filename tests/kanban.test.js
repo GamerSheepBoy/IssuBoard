@@ -3,6 +3,9 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 
+// KanbanBoard が依存する GitHubAPI を事前に読み込む
+import '../js/api.js';
+
 // KanbanBoard を読み込む
 const { KanbanBoard } = (await import('../js/kanban.js'));
 
@@ -85,6 +88,19 @@ describe('KanbanBoard', () => {
       expect(result.doing[0].number).toBe(2);
       expect(result.done[0].number).toBe(3);
     });
+
+    it('blocking関係が抽出される', () => {
+      const issues = [
+        { number: 1, title: 'Parent', state: 'open', labels: [], body: 'blocked by #2', state_reason: null },
+        { number: 2, title: 'Blocker', state: 'open', labels: [], body: '', state_reason: null },
+      ];
+
+      const result = KanbanBoard.classifyIssues(issues);
+
+      expect(result.incoming[0]._blockedBy).toEqual([2]);
+      expect(result.incoming[1]._blockedBy).toEqual([]);
+    });
+
   });
 
   describe('createCard', () => {
