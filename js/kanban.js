@@ -5,50 +5,35 @@ const KanbanBoard = {
   /**
    * Issueをカラムに振り分ける
    * @param {Array} issues - GitHub APIから取得したIssue配列
-   * @param {Object} columns - config.js の columns 定義
    * @returns {Object} カラムIDをキーとしたIssue配列
    */
-  classifyIssues(issues, columns) {
-    const classified = {};
-    // 各カラムの初期化
-    for (const [key, col] of Object.entries(columns)) {
-      classified[key] = [];
-    }
+  classifyIssues(issues) {
+    const classified = {
+      incoming: [],
+      doing: [],
+      done: [],
+    };
+
+    const doingLabel = CONFIG.doingLabel;
 
     for (const issue of issues) {
-      let placed = false;
-
-      // 各カラムのラベル条件とマッチするかチェック
-      for (const [key, col] of Object.entries(columns)) {
-        // Closed状態のIssueは done カラムのみ
-        if (issue.state === 'closed') {
-          if (col.includeClosed) {
-            classified[key].push(issue);
-            placed = true;
-          }
-          continue;
+      // Closed: completed のみ Done に表示、それ以外は非表示
+      if (issue.state === 'closed') {
+        if (issue.state_reason === 'completed') {
+          classified.done.push(issue);
         }
-
-        const issueLabels = issue.labels.map(l => typeof l === 'string' ? l : l.name);
-        const matchesLabel = col.labels.some(label => issueLabels.includes(label));
-
-        if (matchesLabel) {
-          classified[key].push(issue);
-          placed = true;
-          break;
-        }
-
-        // ラベルなしのIssue
-        if (col.includeNoLabel && issueLabels.length === 0) {
-          classified[key].push(issue);
-          placed = true;
-          break;
-        }
+        // not_planned, duplicate, null はスキップ
+        continue;
       }
 
-      // どのカラムにもマッチしなかった場合はBacklogへ
-      if (!placed) {
-        classified.backlog.push(issue);
+      // Open: DOINGラベルの有無で振り分け
+      const issueLabelNames = issue.labels.map(l => (typeof l === 'string' ? l : l.name));
+      const hasDoingLabel = issueLabelNames.includes(doingLabel);
+
+      if (hasDoingLabel) {
+        classified.doing.push(issue);
+      } else {
+        classified.incoming.push(issue);
       }
     }
 
@@ -133,7 +118,7 @@ const KanbanBoard = {
       card.appendChild(labelsEl);
     }
 
-    // メタ情報（Issue番号）
+    // メタ情報（Issue番号 & Closedの場合は完了日）
     const metaEl = document.createElement('div');
     metaEl.className = 'issue-meta';
     const numEl = document.createElement('span');
@@ -142,8 +127,8 @@ const KanbanBoard = {
     metaEl.appendChild(numEl);
 
     const dateEl = document.createElement('span');
-    const updated = new Date(issue.updated_at);
-    dateEl.textContent = updated.toLocaleDateString('ja-JP', {
+    const date = issue.state === 'closed' ? new Date(issue.closed_at) : new Date(issue.updated_at);
+    dateEl.textContent = date.toLocaleDateString('ja-JP', {
       month: 'short',
       day: 'numeric',
     });
