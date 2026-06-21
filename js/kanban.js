@@ -23,6 +23,11 @@ const KanbanBoard = {
     }
 
     for (const issue of issues) {
+      // 関係性情報を初期化
+      issue._blockedBy = [];
+      issue._blockingTargets = [];
+      issue._parent = null;
+
       // Closed: completed のみ Done に表示、それ以外は非表示
       if (issue.state === 'closed') {
         if (issue.state_reason === 'completed') {
@@ -43,25 +48,40 @@ const KanbanBoard = {
       }
     }
 
-    // blocking関係を抽出（closedのblockerは無視）
+    // 関係性を抽出（本文とラベルの両方から）
     for (const issue of issues) {
-      const blockedBy = GitHubAPI.extractBlockingRelationships(issue.body)
-        .map(num => String(num))
-        .filter(blockerNum => {
-          const blocker = issueMap.get(blockerNum);
-          return blocker && blocker.state === 'open';
-        });
-      issue._blockedBy = blockedBy;
-      issue._blockingTargets = [];
+      // 本文から抽出
+      const bodyRelationships = GitHubAPI.extractRelationshipsFromBody(issue.body);
+      // ラベルから抽出
+      const labelRelationships = GitHubAPI.extractRelationshipsFromLabels(issue.labels);
+
+      // マージ（重複を除く）
+      const blockedBySet = new Set([
+        ...bodyRelationships.blockedBy,
+        ...labelRelationships.blockedBy,
+      ]);
+      const blockingSet = new Set([
+        ...bodyRelationships.blocking,
+        ...labelRelationships.blocking,
+      ]);
+
+      issue._blockedBy = Array.from(blockedBySet).filter(num => {
+        const blocker = issueMap.get(String(num));
+        return blocker && blocker.state === 'open';
+      });
+      issue._blockingTargets = Array.from(blockingSet);
+      issue._parent = bodyRelationships.parent || labelRelationships.parent;
     }
 
     // blockingの逆引きを計算（Aがblocked by B → BはAをblockしている）
     for (const issue of issues) {
       for (const blockerNum of issue._blockedBy) {
-        const blocker = issueMap.get(blockerNum);
+        const blocker = issueMap.get(String(blockerNum));
         if (blocker) {
           blocker._blockingTargets = blocker._blockingTargets || [];
-          blocker._blockingTargets.push(String(issue.number));
+          if (!blocker._blockingTargets.includes(issue.number)) {
+            blocker._blockingTargets.push(issue.number);
+          }
         }
       }
     }
@@ -147,17 +167,38 @@ const KanbanBoard = {
       card.appendChild(labelsEl);
     }
 
-    // blocked-byインジケータ
-    if (issue._blockedBy && issue._blockedBy.length > 0) {
-      const relationEl = document.createElement('div');
-      relationEl.className = 'issue-relations';
+    // 関係性バッジ（親子関係 + blocking関係）
+    const relationEl = document.createElement('div');
+    relationEl.className = 'issue-relations';
 
+    // 親Issue表示
+    if (issue._parent && issueMap.get(issue._parent)) {
+      const parentEl = document.createElement('span');
+      parentEl.className = 'relation-badge parent';
+      parentEl.textContent = `👶 #${issue._parent}`;
+      parentEl.title = 'parent issue';
+      relationEl.appendChild(parentEl);
+    }
+
+    // blocked-by表示
+    if (issue._blockedBy && issue._blockedBy.length > 0) {
       const blockedEl = document.createElement('span');
       blockedEl.className = 'relation-badge blocked-by';
       blockedEl.textContent = `🚫 #${issue._blockedBy.join(', #')}`;
       blockedEl.title = 'blocked by';
       relationEl.appendChild(blockedEl);
+    }
 
+    // blocking表示
+    if (issue._blockingTargets && issue._blockingTargets.length > 0) {
+      const blockingEl = document.createElement('span');
+      blockingEl.className = 'relation-badge blocking';
+      blockingEl.textContent = `🔴 #${issue._blockingTargets.join(', #')}`;
+      blockingEl.title = 'blocking';
+      relationEl.appendChild(blockingEl);
+    }
+
+    if (relationEl.children.length > 0) {
       card.appendChild(relationEl);
     }
 
@@ -217,6 +258,9 @@ const KanbanBoard = {
     if (issue._blockingTargets) {
       issue._blockingTargets.forEach(n => relatedNumbers.add(String(n)));
     }
+    if (issue._parent) {
+      relatedNumbers.add(String(issue._parent));
+    }
 
     if (relatedNumbers.size === 0) return;
 
@@ -228,15 +272,17 @@ const KanbanBoard = {
             relatedCard.classList.add('relation-highlight-blocker');
           } else if (issue._blockingTargets && issue._blockingTargets.map(String).includes(num)) {
             relatedCard.classList.add('relation-highlight-blocked');
+          } else if (issue._parent && String(issue._parent) === num) {
+            relatedCard.classList.add('relation-highlight-parent');
           }
         }
       }
     });
 
     card.addEventListener('mouseleave', () => {
-      document.querySelectorAll('.relation-highlight-blocker, .relation-highlight-blocked')
+      document.querySelectorAll('.relation-highlight-blocker, .relation-highlight-blocked, .relation-highlight-parent')
         .forEach(el => {
-          el.classList.remove('relation-highlight-blocker', 'relation-highlight-blocked');
+          el.classList.remove('relation-highlight-blocker', 'relation-highlight-blocked', 'relation-highlight-parent');
         });
     });
   },
