@@ -212,6 +212,11 @@ main {
 
 /* === Relation Highlight on Hover === */
 .issue-card.relation-highlight-parent {
+  border-color: #3fb950;
+  box-shadow: 0 0 0 2px rgba(63, 185, 80, 0.4);
+}
+
+.issue-card.relation-highlight-child {
   border-color: #1f6feb;
   box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.4);
 }
