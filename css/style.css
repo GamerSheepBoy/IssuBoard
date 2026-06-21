@@ -175,6 +175,31 @@ main {
   line-height: 1.4;
 }
 
+.issue-card .issue-relations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.issue-card .relation-badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 2px;
+  line-height: 1.4;
+}
+
+.issue-card .relation-badge.child-count {
+  background-color: #1f6feb;
+  color: #ffffff;
+}
+
+.issue-card .relation-badge.blocked-by {
+  background-color: #8b3a3a;
+  color: #ffffff;
+}
+
 /* === Footer === */
 footer {
   background-color: #161b22;

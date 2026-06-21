@@ -16,7 +16,17 @@ const KanbanBoard = {
 
     const doingLabel = CONFIG.doingLabel;
 
+    // 関係性マップを作成
+    const issueMap = new Map();
     for (const issue of issues) {
+      issueMap.set(issue.number, issue);
+    }
+
+    for (const issue of issues) {
+      // 関係性情報を付与
+      issue._childCount = 0;
+      issue._blockedBy = [];
+
       // Closed: completed のみ Done に表示、それ以外は非表示
       if (issue.state === 'closed') {
         if (issue.state_reason === 'completed') {
@@ -34,6 +44,22 @@ const KanbanBoard = {
         classified.doing.push(issue);
       } else {
         classified.incoming.push(issue);
+      }
+    }
+
+    // 関係性を計算（2パスで親子関係を解決）
+    for (const issue of issues) {
+      // blocking関係を抽出
+      const blockedBy = GitHubAPI.extractBlockingRelationships(issue.body);
+      issue._blockedBy = blockedBy;
+
+      // 親子関係: 同じIssue内の子Issue参照を検出
+      const childRefs = (issue.body || '').match(/#\d+/g) || [];
+      for (const ref of childRefs) {
+        const childNum = parseInt(ref.slice(1), 10);
+        if (issueMap.has(childNum) && childNum !== issue.number) {
+          issueMap.get(childNum)._childCount = (issueMap.get(childNum)._childCount || 0) + 1;
+        }
       }
     }
 
@@ -116,6 +142,30 @@ const KanbanBoard = {
         labelsEl.appendChild(labelEl);
       }
       card.appendChild(labelsEl);
+    }
+
+    // 関係性インジケータ
+    if (issue._childCount > 0 || (issue._blockedBy && issue._blockedBy.length > 0)) {
+      const relationEl = document.createElement('div');
+      relationEl.className = 'issue-relations';
+
+      if (issue._childCount > 0) {
+        const childEl = document.createElement('span');
+        childEl.className = 'relation-badge child-count';
+        childEl.textContent = `👶 ${issue._childCount}`;
+        childEl.title = `${issue._childCount}件の子Issue`;
+        relationEl.appendChild(childEl);
+      }
+
+      if (issue._blockedBy && issue._blockedBy.length > 0) {
+        const blockedEl = document.createElement('span');
+        blockedEl.className = 'relation-badge blocked-by';
+        blockedEl.textContent = `🚫 #${issue._blockedBy.join(', #')}`;
+        blockedEl.title = 'blocked by';
+        relationEl.appendChild(blockedEl);
+      }
+
+      card.appendChild(relationEl);
     }
 
     // メタ情報（Issue番号 & Closedの場合は完了日）

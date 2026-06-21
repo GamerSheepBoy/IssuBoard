@@ -57,6 +57,22 @@ const GitHubAPI = {
     // Pull Requestは除外（Issues APIはPRも含む）
     return allIssues.filter(issue => !issue.pull_request);
   },
+
+  /**
+   * Issue本文からblocking関係を抽出する
+   * @param {string} body - Issue本文
+   * @returns {Array<number>} blocked by されているIssue番号の配列
+   */
+  extractBlockingRelationships(body) {
+    if (!body) return [];
+    const blockedBy = [];
+    const regex = /blocked by #(\d+)/gi;
+    let match;
+    while ((match = regex.exec(body)) !== null) {
+      blockedBy.push(parseInt(match[1], 10));
+    }
+    return blockedBy;
+  },
 };
 
 // ESM / CJS / ブラウザ 全てでグローバルアクセス可能にする
