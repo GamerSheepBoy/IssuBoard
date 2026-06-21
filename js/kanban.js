@@ -86,6 +86,9 @@ const KanbanBoard = {
       }
     }
 
+    // issueMapをKanbanBoardに一時保存（createCardで使用）
+    KanbanBoard._issueMap = issueMap;
+
     return classified;
   },
 
@@ -122,6 +125,9 @@ const KanbanBoard = {
         columnBody.appendChild(card);
       }
     }
+
+    // クリーンアップ
+    delete KanbanBoard._issueMap;
   },
 
   /**
@@ -172,7 +178,7 @@ const KanbanBoard = {
     relationEl.className = 'issue-relations';
 
     // 親Issue表示
-    if (issue._parent && issueMap.get(issue._parent)) {
+    if (issue._parent && KanbanBoard._issueMap && KanbanBoard._issueMap.get(issue._parent)) {
       const parentEl = document.createElement('span');
       parentEl.className = 'relation-badge parent';
       parentEl.textContent = `👶 #${issue._parent}`;
